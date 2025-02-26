@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom"
 import { Input } from '@/components/ui/input.tsx';
 import { Button } from '@/components/ui/button.tsx';
 import { Label } from "@/components/ui/label";
@@ -84,13 +85,13 @@ export default function LoginForm() {
 
                         <p className="mt-2 text-sm text-center text-gray-600 font-lato">
                             Não tem conta?{" "}
-                            <a href="#" className="font-medium text-[--cor-primaria2] hover:text-[--cor-primaria] hover:underline">
+                            <Link to="/cadastro" className="font-medium text-[--cor-primaria2] hover:text-[--cor-primaria] hover:underline">
                                 Registre-se
-                            </a>
+                            </Link>
                         </p>
                     </div>
                 </div>
-            </div>  
+            </div>
         </div>
     );
 }

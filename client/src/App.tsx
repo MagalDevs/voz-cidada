@@ -4,6 +4,9 @@ import LoginForm from './pages/login/Login.tsx';
 import {AuthContext, AuthProvider} from "@/contexts/AuthContext.tsx";
 import Dashboard from "@/pages/dashboard";
 import AdminDashboard from "@/pages/adminDashboard";
+import About from "@/pages/about";
+import Contact from "@/pages/contact";
+import Cadastro from "@/pages/cadastro";
 
 type RouteProps = {
     children: ReactNode;
@@ -43,7 +46,6 @@ const PublicRoute = ({ children }: {children: ReactNode}) => {
     return children;
 }
 
-
 const App = () => {
     return (
         <BrowserRouter>
@@ -76,6 +78,9 @@ const App = () => {
                         }
                     />
 
+                    <Route path="/about" element={<About />} />
+                    <Route path="/contact" element={<Contact />} />
+                    <Route path="/cadastro" element={<Cadastro />} />
                     <Route path="/" element={<Navigate to="/dashboard" />} />
                     <Route path="*" element={<Navigate to="/dashboard" />} />
                 </Routes>
