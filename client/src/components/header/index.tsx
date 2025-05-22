@@ -3,6 +3,8 @@ import { Link, useLocation } from 'react-router-dom'
 import BotaoChamado from '../botaoChamado'
 import { useContext, useState } from 'react'
 import { AuthContext } from '@/contexts/AuthContext'
+import SinoNotificacao from '@/components/sinoNotificacao';
+import { useAuth } from '@/contexts/AuthContext';
 
 function Header() {
     const { isGoogleUser, user, admin, isAuthenticated, signOut, userProfilePicture } = useContext(AuthContext)
@@ -66,12 +68,13 @@ function Header() {
 
                 {/* Ícones e Botões */}
                 <div className="flex items-center gap-4">
-                    <div className="relative">
-                        <Bell className="h-6 w-6 cursor-pointer" />
-                        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
-                            1
-                        </span>
-                    </div>
+                    {isAuthenticated && <SinoNotificacao />}
+
+                    {!rotasOcultas.includes(location.pathname) && (
+                        <Link to={'/dashboard'} className="hidden md:block">
+                            <BotaoChamado className="bg-[--cor-secundaria4] font-montserrat text-white px-4 py-2 rounded-lg hover:bg-opacity-90 transition-colors" />
+                        </Link>
+                    )}
 
                     {!rotasOcultas.includes(location.pathname) && (
                         <Link to={'/dashboard'} className="hidden md:block">

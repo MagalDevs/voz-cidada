@@ -1,10 +1,19 @@
-import {createContext, ReactNode, useEffect, useState} from "react";
+import { createContext, ReactNode, useEffect, useState } from "react";
 import api from "@/shared/axios.ts";
-import {setCookie, parseCookies, destroyCookie} from "nookies";
-import {useNavigate} from "react-router-dom"
-
-import axios, {AxiosResponse} from "axios";
+import { setCookie, parseCookies, destroyCookie } from "nookies";
+import { useNavigate } from "react-router-dom"
+import axios, { AxiosResponse } from "axios";
 import { jwtDecode } from "jwt-decode";
+
+interface Notification {
+    id: number;
+    title: string;
+    message: string;
+    timestamp: string;
+    read: boolean;
+    link?: string;
+    type: 'chamado' | 'sistema' | 'mensagem';
+}
 
 type User = {
     id: number;
@@ -99,12 +108,17 @@ type AuthContextType = {
     oAuthSignIn: (googleData: any) => Promise<void>,
     oAuthSignUp: (profileData: ProfileData) => Promise<void>,
     isGoogleUser: boolean,
-    userProfilePicture: string | null
+    userProfilePicture: string | null;
+    notifications: Notification[];
+    unreadCount: number;
+    fetchNotifications: () => Promise<void>;
+    markNotificationAsRead: (id: number) => Promise<void>;
+    markAllNotificationsAsRead: () => Promise<void>;
 }
 
 export const AuthContext = createContext({} as AuthContextType)
 
-export function AuthProvider({children}: AuthProviderProps) {
+export function AuthProvider({ children }: AuthProviderProps) {
     const [user, setUser] = useState<User | null>(null)
     const [token, setToken] = useState<string | null>(null)          // ← Linha adicionada
     const [admin, setAdmin] = useState<Admin | null>(null)
@@ -112,6 +126,8 @@ export function AuthProvider({children}: AuthProviderProps) {
     const [userRoles, setUserRoles] = useState<string[] | null>(null)
     const [authStatus, setAuthStatus] = useState<string | null>(null)
     const isAuthenticated = !!userRoles;
+    const [notifications, setNotifications] = useState<Notification[]>([]);
+    const [unreadCount, setUnreadCount] = useState(0);
     const [isGoogleUser, setIsGoogleUser] = useState(() => {
         if (typeof window !== "undefined") {
             const storedValue = localStorage.getItem("isGoogleUser");
@@ -119,6 +135,60 @@ export function AuthProvider({children}: AuthProviderProps) {
         }
         return false;
     });
+
+    const fetchNotifications = async () => {
+        if (!token) return;
+
+        try {
+            const response = await api.get<Notification[]>('/api/notifications', {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
+
+            setNotifications(response.data);
+            setUnreadCount(response.data.filter(n => !n.read).length);
+        } catch (error) {
+            console.error('Erro ao buscar notificações:', error);
+        }
+    };
+
+    // Marcar uma notificação como lida
+    const markNotificationAsRead = async (id: number) => {
+        try {
+            await api.patch(`/api/notifications/${id}/read`, null, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
+
+            setNotifications(prev =>
+                prev.map(n => n.id === id ? { ...n, read: true } : n)
+            );
+            setUnreadCount(prev => prev - 1);
+        } catch (error) {
+            console.error('Erro ao marcar notificação como lida:', error);
+        }
+    };
+
+    // Marcar todas como lidas
+    const markAllNotificationsAsRead = async () => {
+        try {
+            await api.patch('/api/notifications/mark-all-read', null, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
+
+            setNotifications(prev =>
+                prev.map(n => ({ ...n, read: true }))
+            );
+            setUnreadCount(0);
+        } catch (error) {
+            console.error('Erro ao marcar todas as notificações como lidas:', error);
+        }
+    };
+
     const [userProfilePicture, setUserProfilePicture] = useState<string | null>(() => {
         if (typeof window !== "undefined") {
             return localStorage.getItem("userProfilePicture") || null;
@@ -129,7 +199,7 @@ export function AuthProvider({children}: AuthProviderProps) {
     const navigate = useNavigate();
 
     useEffect(() => {
-        const {"vozcidada.accessToken": accessToken} = parseCookies();
+        const { "vozcidada.accessToken": accessToken } = parseCookies();
         if (accessToken) {
             setToken(accessToken);     // linha adicionada
             try {
@@ -198,13 +268,13 @@ export function AuthProvider({children}: AuthProviderProps) {
         setToken(accessToken);   // linha adicionada
     }
 
-    async function signIn({login, password}: SignInData) {
+    async function signIn({ login, password }: SignInData) {
         const response: SignInResponse = await api.post("/auth/login", {
             login,
             password
         });
 
-        const {accessToken, refreshToken} = response.data;
+        const { accessToken, refreshToken } = response.data;
         const decoded = jwtDecode<JWTClaims>(accessToken);
 
         setUserRoles(decoded.roles);
@@ -229,9 +299,9 @@ export function AuthProvider({children}: AuthProviderProps) {
                 navigate("/signup/oauth")
             });
     }
-    
 
-    const getCepApi = async (cep: string) =>{
+
+    const getCepApi = async (cep: string) => {
         try {
             const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
             if (!response.ok) throw new Error("Erro ao buscar CEP");
@@ -255,7 +325,7 @@ export function AuthProvider({children}: AuthProviderProps) {
         // Remove os cookies de acesso
         destroyCookie(null, "vozcidada.accessToken");
         destroyCookie(null, "vozcidada.refreshToken");
-        
+
         // Limpa o estado do usuário e roles
         setUser(null);
         setAdmin(null);
@@ -265,7 +335,7 @@ export function AuthProvider({children}: AuthProviderProps) {
         if (typeof window !== 'undefined') {
             localStorage.removeItem('isGoogleUser');
         }
-        
+
         // Remove a foto do localStorage
         if (typeof window !== 'undefined') {
             localStorage.removeItem('userProfilePicture');
@@ -292,15 +362,15 @@ export function AuthProvider({children}: AuthProviderProps) {
             const response = await api.post("/auth/oauth/google", {
                 email: googleresponse.data.email
             });
-            
-            const pictureUrl = googleresponse.data.picture;    
+
+            const pictureUrl = googleresponse.data.picture;
 
             setUserProfilePicture(pictureUrl);
             if (typeof window !== 'undefined') {
                 localStorage.setItem('userProfilePicture', pictureUrl);
             }
 
-            const {accessToken, refreshToken} = response.data;
+            const { accessToken, refreshToken } = response.data;
             setTokens(accessToken, refreshToken);
 
             const decoded = jwtDecode<JWTClaims>(accessToken);
@@ -355,13 +425,13 @@ export function AuthProvider({children}: AuthProviderProps) {
         })
 
         console.log("registrando user");
-        
+
         const response = await api.post("/auth/login", {
             login: data.email,
             password: data.password
         })
 
-        const {accessToken, refreshToken} = response.data
+        const { accessToken, refreshToken } = response.data
         setTokens(accessToken, refreshToken)
 
         const dataCadastro = new Date().toISOString().slice(0, 19).replace('T', ' ');
@@ -407,9 +477,9 @@ export function AuthProvider({children}: AuthProviderProps) {
             uf: novoEndereco.uf
         }
 
-        try {      
+        try {
             const response = await api.put("/api/usuario", userAtualizado);
-    
+
             setUser(response.data);
         }
         catch (error) {
@@ -438,7 +508,7 @@ export function AuthProvider({children}: AuthProviderProps) {
             if (!infoCep) {
                 throw new Error("Erro ao buscar informações do CEP.");
             }
-    
+
             const dataCadastro = new Date().toISOString().slice(0, 19).replace('T', ' ');
             await api.post("/api/usuario", {
                 nome: data.name,
@@ -451,38 +521,38 @@ export function AuthProvider({children}: AuthProviderProps) {
                 uf: infoCep.uf,
                 dataCadastro: dataCadastro
             });
-    
+
             const { "vozcidada.accessToken": tokenBeforeUpdate } = parseCookies();
             if (!tokenBeforeUpdate) {
                 throw new Error("Token de acesso não encontrado.");
             }
-    
+
             const decoded = jwtDecode<JWTClaims>(tokenBeforeUpdate);
             const userResponse = await api.get(`/api/usuario/auth/${decoded.sub}`);
             setUser(userResponse.data);
-    
+
             setIsGoogleUser(true);
             if (typeof window !== 'undefined') {
                 localStorage.setItem('isGoogleUser', JSON.stringify(true));
             }
-    
+
             const updateTokens = await api.patch("/auth/updateAuthStatus");
             const { accessToken, refreshToken } = updateTokens.data;
             setTokens(accessToken, refreshToken);
             setCookie(undefined, "vozcidada.authType", "OAuth", {
                 maxAge: 60 * 60 * 1 // 1h
             });
-    
+
             // Decodificar o novo token e atualizar os estados
             const newDecoded = jwtDecode<JWTClaims>(accessToken);
             setUserRoles(newDecoded.roles);
             setAuthStatus(newDecoded.auth_status);
-    
+
             // Forçar uma atualização do estado antes de navegar
             setTimeout(() => {
                 navigate("/dashboard", { replace: true });
             }, 0);
-    
+
         } catch (error) {
             console.error("Erro durante o cadastro OAuth:", error);
             alert("Ocorreu um erro durante o cadastro. Tente novamente.");
@@ -508,9 +578,24 @@ export function AuthProvider({children}: AuthProviderProps) {
                 oAuthSignIn,
                 oAuthSignUp,
                 isGoogleUser,
-                userProfilePicture
+                userProfilePicture,
+                notifications,
+                unreadCount,
+                fetchNotifications,
+                markNotificationAsRead,
+                markAllNotificationsAsRead
             }}>
             {children}
         </AuthContext.Provider>
     )
 }
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth deve ser usado dentro de um AuthProvider');
+  }
+  return context;
+};
+
+export default AuthProvider;
