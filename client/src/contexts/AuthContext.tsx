@@ -1,4 +1,4 @@
-import { createContext, ReactNode, useEffect, useState } from "react";
+import { createContext, ReactNode, useEffect, useState, useContext } from "react";
 import api from "@/shared/axios.ts";
 import { setCookie, parseCookies, destroyCookie } from "nookies";
 import { useNavigate } from "react-router-dom"

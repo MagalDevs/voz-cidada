@@ -1,3 +1,5 @@
+"use client";
+
 import { Bell, ChevronDown, ChevronUp, LogOut, Menu, User, X } from 'lucide-react'
 import { Link, useLocation } from 'react-router-dom'
 import BotaoChamado from '../botaoChamado'
