@@ -1,5 +1,5 @@
 import { ReactNode, useContext, useState } from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthContext, AuthProvider } from "@/contexts/AuthContext.tsx";
 import About from "@/pages/about/index.tsx";
 import Contact from "@/pages/contact/index.tsx";
@@ -13,7 +13,7 @@ import SignUp from "./pages/SignUp/index.tsx";
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import OAuthSignUp from "@/pages/OAuthSignUp";
 import { Toaster } from "react-hot-toast";
-import Home from "./pages/Home/index.tsx";
+import Home from "./pages/home/index.tsx";
 import {myGetToken, onMessageListener} from "./firebase.ts"
 
 type RouteProps = {
@@ -96,7 +96,7 @@ const App = () => {
 
     return (
         <GoogleOAuthProvider clientId="518788781560-5kjacjm9okd3cnofcs2beq2e6nb7br12.apps.googleusercontent.com">
-            <BrowserRouter>
+            <HashRouter>
                 <AuthProvider>
                     <Routes>
                         {/* ROTEAS PÚBLICAS */}
@@ -200,7 +200,7 @@ const App = () => {
                         <Route path="*" element={<Navigate to="/dashboard" replace />} />
                     </Routes>
                 </AuthProvider>
-            </BrowserRouter>
+            </HashRouter>
             <Toaster />
         </GoogleOAuthProvider>
     );

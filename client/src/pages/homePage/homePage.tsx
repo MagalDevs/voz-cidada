@@ -11,7 +11,7 @@ import CreateChamadoDialog from '../Chamados/components/CreateChamadoDialog';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from '@/components/ui/button';
-import GetChamadoDialog from '../Chamados/components/GetChamadoDialog';
+import GetChamadoDialog from '../chamados/components/GetChamadoDialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,7 +19,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { FileText, Filter } from "lucide-react"
-import ChamadosCarousel from '../Home/components/carousel';
+import ChamadosCarousel from '../home/components/carousel';
 import { ChamadoInterface, Status } from '@/shared/types';
 import Rating from '@mui/material/Rating';
 import HistoricoChamado from '@/components/HistoricoChamado';
