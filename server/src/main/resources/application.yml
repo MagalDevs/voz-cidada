@@ -8,6 +8,7 @@ spring:
     url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/voz-cidada
     username: postgres
     password: ${POSTGRES_PASSWORD:admin}
+
   jpa:
     hibernate:
       ddl-auto: none
