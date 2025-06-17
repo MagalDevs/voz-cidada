@@ -7,6 +7,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 @Configuration
 public class FirebaseConfig {
@@ -14,8 +16,13 @@ public class FirebaseConfig {
     @Bean
     public FirebaseApp firebaseApp() throws IOException {
 // guardar o arquivo firebase.json na pasta resource, E NÃO FAZER O PUSH DESSE ARQUIVO NO GIT!
+        if(!Files.exists(Path.of("firebase_pre.json"))){
+            createFileFromString("firebase.json", System.getenv("FIREBASE_PK"));
+        } else {
+            createFileFromString("firebase.json", Files.readString(Path.of("firebase_pre.json")));
+
+        }
         File file = new File("firebase.json");
-        createFileFromString("firebase.json", System.getenv("FIREBASE_PK"));
         InputStream serviceAccount = new FileInputStream(file);
         FirebaseOptions options = FirebaseOptions.builder()
                 .setCredentials(GoogleCredentials.fromStream(serviceAccount))
@@ -25,8 +32,10 @@ public class FirebaseConfig {
     }
 
     public static void createFileFromString(String filePath, String content) throws IOException {
-        File file = new File(filePath);
 
+        File file = new File(filePath);
+        // Fix for beanstalk (since it replaces \n for n)
+        content = content.replaceAll("@", "\n");
         // Create parent directories if they don't exist
         File parent = file.getParentFile();
         if (parent != null) {
